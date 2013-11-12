@@ -1,0 +1,4 @@
+include README.rst
+include LICENSE
+include gpl-2.0.txt
+include txwsman/request/*.xml

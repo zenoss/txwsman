@@ -1,0 +1,48 @@
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:n1="http://schemas.openwsman.org/wbem/wscim/1/intrinsic">
+  <s:Header>
+    <wsa:Action s:mustUnderstand="true">http://schemas.openwsman.org/wbem/wscim/1/intrinsic/EnumerateClassNames</wsa:Action>
+    <wsa:To s:mustUnderstand="true">{resource_uri}</wsa:To>
+    <wsa:MessageID s:mustUnderstand="true">{uuid}</wsa:MessageID>
+    <wsman:ResourceURI s:mustUnderstand="true">http://schemas.openwsman.org/wbem/wscim/1/intrinsic</wsman:ResourceURI>
+    <wsa:ReplyTo>
+      <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+    </wsa:ReplyTo>
+  </s:Header>
+  <s:Body>
+    <n1:EnumerateClassNames_INPUT/>
+  </s:Body>
+</s:Envelope>
+
+
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:n1="http://schemas.openwsman.org/wbem/wscim/1/intrinsic">
+  <s:Header>
+    <wsa:Action s:mustUnderstand="true">http://schemas.openwsman.org/wbem/wscim/1/intrinsic/EnumerateClassNames</wsa:Action>
+    <wsa:To s:mustUnderstand="true">https://z2:5986/wsman</wsa:To>
+    <wsa:MessageID s:mustUnderstand="true">37267076-5D21-49C5-896F-0BC8574E499C</wsa:MessageID>
+    <wsman:ResourceURI s:mustUnderstand="true">http://schemas.openwsman.org/wbem/wscim/1/intrinsic</wsman:ResourceURI>
+    <wsa:ReplyTo>
+      <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+    </wsa:ReplyTo>
+  </s:Header>
+  <s:Body>
+    <n1:EnumerateClassNames_INPUT/>
+  </s:Body>
+</s:Envelope>
+
+
+# Get a specific class
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:n1="http://schemas.openwsman.org/wbem/wscim/1/intrinsic/foo">
+  <s:Header>
+    <wsa:Action s:mustUnderstand="true">http://schemas.openwsman.org/wbem/wscim/1/intrinsic/foo/GetClass</wsa:Action>
+    <wsa:To s:mustUnderstand="true">https://z2:5986/wsman</wsa:To>
+    <wsa:MessageID s:mustUnderstand="true">DD91D776-77BD-4594-B48F-6D132A38582B</wsa:MessageID>
+    <wsman:ResourceURI s:mustUnderstand="true">http://schemas.openwsman.org/wbem/wscim/1/intrinsic/foo</wsman:ResourceURI>
+    <wsa:ReplyTo>
+      <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+    </wsa:ReplyTo>
+  </s:Header>
+  <s:Body>
+    <n1:GetClass_INPUT/>
+  </s:Body>
+</s:Envelope>
+
