@@ -138,6 +138,21 @@ class WsmanClient(object):
         defer.returnValue(items)
 
 
+    @defer.inlineCallbacks
+    def do_enumerate(self, enum_infos):
+        for enum_info in enum_infos:
+            try:
+                items[enum_info] = yield self.enumerate(
+                                     enum_info.className, 
+                                     enum_info.wql,
+                                     enum_info.namespace)
+            except RequestError as e:
+                if 'unauthorized' in e[0]:
+                    raise
+                else:
+                    continue
+         defer.returnValue(items)
+
 def create_wsman_client(conn_info):
     """
     Constructs a WSMAN client with the default response handler.
