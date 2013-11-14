@@ -170,6 +170,10 @@ def create_request_sender(conn_info):
     return sender
     #return EtreeRequestSender(sender)
 
+EnumInfo = namedtuple('EnumInfo', ['ClassName', 'wql', 'namespace'])
+def create_enum_info(ClassName,wql,namespace):
+    return EnumInfo(ClassName,wql,namespace)
+
 class RequestError(Exception):
     pass
 class UnauthorizedError(RequestError):
