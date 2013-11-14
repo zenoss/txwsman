@@ -151,7 +151,7 @@ class WsmanClient(object):
                     raise
                 else:
                     continue
-         defer.returnValue(items)
+        defer.returnValue(items)
 
 def create_wsman_client(conn_info):
     """
