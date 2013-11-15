@@ -140,6 +140,7 @@ class WsmanClient(object):
 
     @defer.inlineCallbacks
     def do_enumerate(self, enum_infos):
+        items = {}
         for enum_info in enum_infos:
             try:
                 items[enum_info] = yield self.enumerate(
