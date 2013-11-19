@@ -3,7 +3,7 @@
   <s:Header>
     <wsa:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate</wsa:Action>
     <wsa:To s:mustUnderstand="true">{request_uri}</wsa:To>
-    <wsman:ResourceURI s:mustUnderstand="true">http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/{className}</wsman:ResourceURI>
+    <wsman:ResourceURI s:mustUnderstand="true">{className}</wsman:ResourceURI>
     <wsa:MessageID s:mustUnderstand="true">{uuid}</wsa:MessageID>
     <wsa:ReplyTo>
       <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>

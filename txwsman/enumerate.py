@@ -100,6 +100,13 @@ class WsmanClient(object):
         else:
            filter = ''
 
+        if not className.startswith('http'):
+           defaultClassName = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/{}' 
+           className = defaultClassName.format(className)
+        import pdb;pdb.set_trace()
+           
+           
+
         try:
             for i in xrange(_MAX_REQUESTS_PER_ENUMERATION):
                 log.debug('{0} "{1}" {2}'.format(
@@ -143,7 +150,7 @@ class WsmanClient(object):
         items = {}
         for enum_info in enum_infos:
             try:
-                item[enum_info.className] = yield self.enumerate(
+                items[enum_info.className] = yield self.enumerate(
                                      enum_info.className, 
                                      enum_info.wql,
                                      enum_info.namespace)
