@@ -140,14 +140,13 @@ class WsmanClient(object):
 
     @defer.inlineCallbacks
     def do_enumerate(self, enum_infos):
-        items = []
+        items = {}
         for enum_info in enum_infos:
             try:
-                item = yield self.enumerate(
+                item[enum_info.className] = yield self.enumerate(
                                      enum_info.className, 
                                      enum_info.wql,
                                      enum_info.namespace)
-                items.append(item)
             except RequestError as e:
                 if 'unauthorized' in e[0]:
                     raise
