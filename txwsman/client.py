@@ -100,7 +100,7 @@ if __name__ == "__main__":
                         scheme='https',
                         auth_type='basic')
         results = yield client.enumerate(ClassName='DCIM_ComputerSystems')
-        import pdb;pdb.set_trace()
+
         stop_reactor()
 
     reactor.callWhenRunning(enumerate_test)

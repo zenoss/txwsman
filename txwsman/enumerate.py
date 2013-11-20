@@ -103,9 +103,6 @@ class WsmanClient(object):
         if not className.startswith('http'):
            defaultClassName = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/{}' 
            className = defaultClassName.format(className)
-        import pdb;pdb.set_trace()
-           
-           
 
         try:
             for i in xrange(_MAX_REQUESTS_PER_ENUMERATION):
