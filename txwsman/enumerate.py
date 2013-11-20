@@ -545,6 +545,9 @@ class Item(object):
     def __repr__(self):
         return '\n' + pformat(vars(self), indent=4)
 
+    def __getitem__(self, x):
+        return getattr(self, x)
+
 
 class ItemsAccumulator(object):
     """
