@@ -53,6 +53,7 @@ _MARKER = object()
 class WsmanFault(Exception):
     pass
 
+
 class WsmanClient(object):
     """
     Sends enumerate requests to a host running the WSMAN service and returns
@@ -65,8 +66,8 @@ class WsmanClient(object):
         self._hostname = sender.hostname
 
     @defer.inlineCallbacks
-    def enumerate(self, className, wql=None, mode=None, references=None, 
-                                   namespace=None, ext=False, maxelements=None):
+    def enumerate(self, className, wql=None, mode=None, references=None,
+                  namespace=None, ext=False, maxelements=None):
         """
         Runs a remote WQL query.
         """
@@ -76,37 +77,46 @@ class WsmanClient(object):
         fault = None
         request_uri = yield self._sender.url
         if namespace:
-           reqselector = "<wsman:SelectorSet>"
-           reqselector = reqselector + '<wsman:Selector Name="__cimnamespace">{}</wsman:Selector>'.format(namespace)
-           reqselector = reqselector + "</wsman:SelectorSet>"
+            reqselector = "<wsman:SelectorSet>"
+            reqselector = reqselector + \
+                '<wsman:Selector Name="__cimnamespace">' + \
+                '{}</wsman:Selector>'.format(namespace)
+            reqselector = reqselector + "</wsman:SelectorSet>"
         else:
-           reqselector = ""
+            reqselector = ""
 
         if mode == 'epr':
-           enumerationmode = "<wsman:EnumerationMode>EnumerateEPR</wsman:EnumerationMode>"
+            enumerationmode = "<wsman:EnumerationMode>" +\
+                              "EnumerateEPR</wsman:EnumerationMode>"
         elif mode == 'objepr':
-           enumerationmode = "<wsman:EnumerationMode>EnumerateObjectAndEPR</wsman:EnumerationMode>"
+            enumerationmode = "<wsman:EnumerationMode>" +\
+                              "EnumerateObjectAndEPR</wsman:EnumerationMode>"
         else:
-           enumerationmode = ""
-    
+            enumerationmode = ""
+
         if ext:
-           showext = '<wsman:OptionSet><wsman:Option Name="ShowExtensions"/></wsman:OptionSet>'        
+            showext = '<wsman:OptionSet>' +\
+                      '<wsman:Option Name="ShowExtensions"/></wsman:OptionSet>'
         else:
-           showext = ''
-   
+            showext = ''
+
         if maxelements:
-           maxelementstr = "<wsman:MaxElements>{}</wsman:MaxElements>".format(maxelements)
+            maxelementstr = "<wsman:MaxElements>" +\
+                            "{}</wsman:MaxElements>".format(maxelements)
         else:
-           maxelementstr = ''
+            maxelementstr = ''
 
         if wql:
-           filter = '<wsman:Filter Dialect="http://schemas.dmtf.org/wbem/cql/1/dsp0202.pdf">{}</wsman:Filter>'.format(wql)
+            filter = '<wsman:Filter ' +\
+                'Dialect="http://schemas.dmtf.org/wbem/cql/1/dsp0202.pdf">' +\
+                '{}</wsman:Filter>'.format(wql)
         else:
-           filter = ''
+            filter = ''
 
         if not className.startswith('http'):
-           defaultClassName = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/{}' 
-           className = defaultClassName.format(className)
+            defaultClassName = \
+                'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/{}'
+            className = defaultClassName.format(className)
 
         try:
             for i in xrange(_MAX_REQUESTS_PER_ENUMERATION):
@@ -119,7 +129,7 @@ class WsmanClient(object):
                     reqselector=reqselector,
                     showext=showext,
                     filter=filter,
-                    maxelementstr = maxelementstr,
+                    maxelementstr=maxelementstr,
                     uuid=str(uuid.uuid4()),
                     enumerationmode=enumerationmode,
                     enumeration_context=enumeration_context)
@@ -147,22 +157,22 @@ class WsmanClient(object):
             raise
         defer.returnValue(items)
 
-
     @defer.inlineCallbacks
     def do_enumerate(self, enum_infos):
         items = {}
         for enum_info in enum_infos:
             try:
                 items[enum_info.className] = yield self.enumerate(
-                                     enum_info.className, 
-                                     enum_info.wql,
-                                     enum_info.namespace)
+                    enum_info.className,
+                    enum_info.wql,
+                    enum_info.namespace)
             except RequestError as e:
                 if 'unauthorized' in e[0]:
                     raise
                 else:
                     continue
         defer.returnValue(items)
+
 
 def create_wsman_client(conn_info):
     """
@@ -204,7 +214,8 @@ class SaxResponseHandler(object):
         proto = ParserFeedingProtocol(parser)
         response.deliverBody(proto)
         yield proto.d
-        defer.returnValue((factory.enumeration_context, factory.items, factory.fault))
+        defer.returnValue((factory.enumeration_context,
+                           factory.items, factory.fault))
 
 
 def safe_lower_equals(left, right):
@@ -540,6 +551,7 @@ class EnumerateContentHandler(sax.handler.ContentHandler):
         if is_end_of_sequence(tag):
             self._end_of_sequence = True
 
+
 class FaultContentHandler(sax.handler.ContentHandler):
     def __init__(self, text_buffer):
         self._text_buffer = text_buffer
@@ -559,9 +571,11 @@ class FaultContentHandler(sax.handler.ContentHandler):
             if self._fault:
                 message = self._fault
             if self._fault_value:
-                message = message + "\nFault Value: {}".format(self._fault_value)
+                message = message + \
+                    "\nFault Value: {}".format(self._fault_value)
             if self._fault_detail:
-                message = message + "\nFault Detail: {}".format(self._fault_detail)
+                message = message + \
+                    "\nFault Detail: {}".format(self._fault_detail)
             return message
 
     def endElementNS(self, name, qname):
@@ -588,7 +602,7 @@ class FaultContentHandler(sax.handler.ContentHandler):
             self._fault = self._text_buffer.text
         if is_end_of_sequence(tag):
             self._end_of_sequence = True
-  
+
 
 class AddPropertyWithoutItemError(Exception):
     """
@@ -611,7 +625,7 @@ class Item(object):
         return '\n' + pformat(vars(self), indent=4)
 
     def __getitem__(self, x):
-        
+
         return getattr(self, str(x))
 
 

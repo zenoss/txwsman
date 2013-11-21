@@ -16,6 +16,7 @@ from twisted.internet import defer
 from . import app
 from .enumerate import create_wsman_client
 
+
 class WsmanStrategy(object):
 
     def __init__(self):
@@ -24,7 +25,6 @@ class WsmanStrategy(object):
     @property
     def count_summary(self):
         return '{0} items'.format(self._item_count)
-
 
     def _print_items(self, items, hostname, className, include_header):
         if include_header:
@@ -56,12 +56,11 @@ class WsmanStrategy(object):
                                  wql=config.wql,
                                  maxelements=config.maxelements,
                                  namespace=config.namespace)
-            d.addCallback(self._print_items, conn_info.hostname, config.className, include_header)
-            
+            d.addCallback(self._print_items, conn_info.hostname,
+                          config.className, include_header)
+
             ds.append(d)
         return defer.DeferredList(ds, consumeErrors=True)
-
-
 
 
 class WsmanUtility(app.ConfigDrivenUtility):
@@ -88,9 +87,7 @@ class WsmanUtility(app.ConfigDrivenUtility):
                 print >>sys.stderr, "ERROR: mode must be either epr or objepr"
                 sys.exit(1)
 
-
         # check max is int and between 1-1048576
-
         return legit
 
     def add_config(self, parser, config):
@@ -103,7 +100,6 @@ class WsmanUtility(app.ConfigDrivenUtility):
         config.mode = args.mode
         config.ext = args.ext
         config.maxelements = args.max
-
 
 if __name__ == '__main__':
     app.main(WsmanUtility(WsmanStrategy()))

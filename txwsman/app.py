@@ -215,14 +215,14 @@ def _parse_args(utility):
     parser.add_argument("--authentication", "-a", default='basic',
                         choices=['basic', 'kerberos'])
     parser.add_argument("--username", "-u")
-    # Hide this option, config file loading isnt really supported 
+    # Hide this option, config file loading isnt really supported
     # but its too deep to quickly remove
     parser.add_argument("--config", "-c", help=SUPPRESS)
     utility.add_args(parser)
     args = parser.parse_args()
     if not args.config:
         if not args.remote or not args.username:
-            #print >>sys.stderr, "ERROR: You must specify a config file with " \
+            #print >>sys.stderr, "ERROR: You must specify a config file with "\
             #                    "-c or specify remote and username"
             print >>sys.stderr, "ERROR: You must specify a remote and username"
             sys.exit(1)
@@ -234,8 +234,8 @@ def _parse_args(utility):
             connectiontype = 'Keep-Alive'
             keytab = ''
             args.conn_info = ConnectionInfo(
-                hostname, str(args.authentication), args.username, password, scheme,
-                port, connectiontype, keytab)
+                hostname, str(args.authentication), args.username, password,
+                scheme, port, connectiontype, keytab)
             try:
                 verify_conn_info(args.conn_info)
             except Exception as e:

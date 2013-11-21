@@ -6,35 +6,35 @@ import base64
 import uuid
 import httplib
 from datetime import datetime
-from twisted.python.log import err
 from twisted.web.client import Agent
 from twisted.internet import reactor
-from twisted.internet.ssl import ClientContextFactory
 from twisted.internet.ssl import CertificateOptions
 from twisted.internet.protocol import Protocol
 from collections import namedtuple
-from twisted.internet import reactor, defer
+from twisted.internet import defer
 from twisted.web.http_headers import Headers
-from xml.etree import cElementTree as ET
-from lxml import etree, objectify
+from lxml import etree
 from cStringIO import StringIO
+from xml.etree import cElementTree as ET
+from . import constants as c
 
 _CONTENT_TYPE = {'Content-Type': ['application/soap+xml;charset=utf-8']}
 _REQUEST_TEMPLATE_NAMES = ('identify', 'enumerate', 'pull')
 _REQUEST_TEMPLATES = {}
 _REQUEST_TEMPLATE_DIR = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 'request')
+    os.path.dirname(os.path.abspath(__file__)), 'request')
 _XML_WHITESPACE_PATTERN = re.compile(r'>\s+<')
 
 log = logging.getLogger('zen.wsman.utils')
 log.setLevel(level=logging.DEBUG)
-ConnectionInfo = namedtuple( 'ConnectionInfo',
-                      ['hostname', 'auth_type', 'username', 'password', 'scheme', 'port',
-                       'connectiontype', 'keytab'])
+ConnectionInfo = namedtuple('ConnectionInfo',
+                            ['hostname', 'auth_type', 'username', 'password',
+                             'scheme', 'port', 'connectiontype', 'keytab'])
 _AGENT = None
 _MAX_PERSISTENT_PER_HOST = 200
 _CACHED_CONNECTION_TIMEOUT = 24000
 _CONNECT_TIMEOUT = 500
+
 
 class MyWebClientContextFactory(object):
 
@@ -66,9 +66,11 @@ def _get_agent():
                 _AGENT = Agent(reactor, context_factory)
     return _AGENT
 
+
 def _get_basic_auth_header(conn_info):
     authstr = "{0}:{1}".format(conn_info.username, conn_info.password)
     return 'Basic {0}'.format(base64.encodestring(authstr).strip())
+
 
 @defer.inlineCallbacks
 def _get_url_and_headers(conn_info):
@@ -78,11 +80,10 @@ def _get_url_and_headers(conn_info):
     if conn_info.auth_type == 'basic':
         headers.addRawHeader(
             'Authorization', _get_basic_auth_header(conn_info))
-    elif conn_info.auth_type == 'kerberos':
-        yield _authenticate_with_kerberos(conn_info, url)
     else:
         raise Exception('unknown auth type: {0}'.format(conn_info.auth_type))
     defer.returnValue((url, headers))
+
 
 def _get_request_template(name):
     if name not in _REQUEST_TEMPLATE_NAMES:
@@ -93,8 +94,9 @@ def _get_request_template(name):
             _REQUEST_TEMPLATES[name] = "".join(f.read().strip().splitlines())
             #_REQUEST_TEMPLATES[name] = \
             #   _XML_WHITESPACE_PATTERN.sub('><', f.read()).strip()
-            
+
     return _REQUEST_TEMPLATES[name]
+
 
 class _StringProducer(object):
     """
@@ -159,9 +161,11 @@ class RequestSender(object):
                 #log.debug(xml.toprettyxml())
                 log.debug(request)
             except:
-                log.debug('Could not prettify response XML: "{0}"'.format(request))
+                log.debug('Could not prettify '
+                          'response XML: "{0}"'.format(request))
         body_producer = _StringProducer(request)
-        response = yield _get_agent().request('POST', self._url, self._headers, body_producer)
+        response = yield _get_agent().request('POST', self._url,
+                                              self._headers, body_producer)
         log.debug('received response {0} {1}'.format(
             response.code, request_template_name))
         if response.code == httplib.UNAUTHORIZED:
@@ -174,25 +178,53 @@ class RequestSender(object):
             raise RequestError("HTTP status: {0}. {1}".format(
                 response.code, message))
         defer.returnValue(response)
-    
+
+
 def create_request_sender(conn_info):
     sender = RequestSender(conn_info)
     return sender
     #return EtreeRequestSender(sender)
 
 EnumInfo = namedtuple('EnumInfo', ['className', 'wql', 'namespace'])
-def create_enum_info(className,wql,namespace):
-    return EnumInfo(className,wql,namespace)
+
+
+def create_enum_info(className, wql, namespace):
+    return EnumInfo(className, wql, namespace)
+
 
 class RequestError(Exception):
     pass
 
+
 class UnauthorizedError(RequestError):
     pass
+
 
 def verify_conn_info(conn_info):
     #TODO fill out
     pass
+
+
+def _parse_error_message(xml_str):
+    elem = ET.fromstring(xml_str)
+    text = elem.findtext('.//{' + c.XML_NS_SOAP_1_2 + '}Text').strip()
+    detail = elem.findtext('.//{' + c.XML_NS_SOAP_1_2 + '}Detail/*/*').strip()
+    return "{0} {1}".format(text, detail)
+
+
+class _ErrorReader(Protocol):
+
+    def __init__(self):
+        self.d = defer.Deferred()
+        self._data = []
+
+    def dataReceived(self, data):
+        self._data.append(data)
+
+    def connectionLost(self, reason):
+        message = _parse_error_message(''.join(self._data))
+        self.d.callback(message)
+
 
 class _StringProtocol(Protocol):
 
@@ -207,7 +239,8 @@ class _StringProtocol(Protocol):
         self.d.callback(''.join(self._data))
 
 
-ZOFFSET_PATTERN = re.compile(r'[-+]\d+:\d\d$')
+TZOFFSET_PATTERN = re.compile(r'[-+]\d+:\d\d$')
+_NANOSECONDS_PATTERN = re.compile(r'\.(\d{6})(\d{3})')
 
 
 def get_datetime(text):
@@ -236,10 +269,9 @@ if __name__ == '__main__':
         if reactor.running:
             reactor.stop()
 
-
     @defer.inlineCallbacks
     def main():
-        hostname = '10.100.40.178'
+        hostname = '192.168.0.5'
         auth_type = 'basic'
         username = 'root'
         password = 'calvin'
@@ -249,23 +281,25 @@ if __name__ == '__main__':
         keytab = ''
 
         conn_info = ConnectionInfo(
-                  hostname,
-                  auth_type,
-                  username,
-                  password,
-                  scheme,
-                  port,
-                  connectiontype,
-                  keytab,)
-        s=create_request_sender(conn_info)
+            hostname,
+            auth_type,
+            username,
+            password,
+            scheme,
+            port,
+            connectiontype,
+            keytab,)
+        s = create_request_sender(conn_info)
         resp = yield s.send_request('enumerate',
-                                    uuid=str(uuid.uuid4()),resource_uri='https://10.100.40.178:443/wsman')
-         
+                                    uuid=str(uuid.uuid4()),
+                                    resource_uri=
+                                    'https://192.168.0.5:443/wsman')
+
         proto = _StringProtocol()
         resp.deliverBody(proto)
         xml_str = yield proto.d
         tree = etree.parse(StringIO(xml_str))
-        xml_str = etree.tostring(tree,pretty_print=True)
+        xml_str = etree.tostring(tree, pretty_print=True)
         try:
             log.debug(xml_str)
             #import xml.dom.minidom
@@ -276,20 +310,23 @@ if __name__ == '__main__':
         resp_tree = etree.parse(StringIO(xml_str))
 
         # Strip the namespaces
-        root=resp_tree.getroot()
+        root = resp_tree.getroot()
         for elem in root.getiterator():
             i = elem.tag.find('}')
             if i >= 0:
-               elem.tag = elem.tag[i+1:]
-        context = resp_tree.xpath('//EnumerationContext/text()')[0]       
+                elem.tag = elem.tag[i+1:]
+        context = resp_tree.xpath('//EnumerationContext/text()')[0]
         #orig_uuid = resp_tree.xpath('//RelatesTo/text()')[0]
         resp = yield s.send_request('pull',
-                                    uuid=str(uuid.uuid4()),resource_uri='https://10.100.40.178:443/wsman', context=context)
+                                    uuid=str(uuid.uuid4()),
+                                    resource_uri=
+                                    'https://10.100.40.178:443/wsman',
+                                    context=context)
         proto = _StringProtocol()
         resp.deliverBody(proto)
         xml_str = yield proto.d
         tree = etree.parse(StringIO(xml_str))
-        xml_str = etree.tostring(tree,pretty_print=True)
+        xml_str = etree.tostring(tree, pretty_print=True)
         if log.isEnabledFor(logging.DEBUG):
             try:
                 log.debug(xml_str)
@@ -297,11 +334,9 @@ if __name__ == '__main__':
                 #xml = xml.dom.minidom.parseString(xml_str)
                 #log.debug(xml.toprettyxml())
             except:
-                log.debug('Could not prettify response XML: "{0}"'.format(xml_str))
+                log.debug('Could not prettify'
+                          ' response XML: "{0}"'.format(xml_str))
         stop_reactor()
-
 
     reactor.callWhenRunning(main)
     reactor.run()
-
-
