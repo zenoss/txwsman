@@ -8,7 +8,7 @@
 ##############################################################################
 
 """
-This module contains the code responsible for constructing WinRM enumeration
+This module contains the code responsible for constructing WSMAN enumeration
 and pull requests containing WQL queries. The responses are parsed with the
 result being a list of item objects. The item objects have a dynamic set of
 attributes, even within the same query. Some of the Win32_* CIM classes have
@@ -50,9 +50,12 @@ _MAX_REQUESTS_PER_ENUMERATION = 9999
 _MARKER = object()
 
 
+class WsmanFault(Exception):
+    pass
+
 class WsmanClient(object):
     """
-    Sends enumerate requests to a host running the WinRM service and returns
+    Sends enumerate requests to a host running the WSMAN service and returns
     a list of items.
     """
 
@@ -70,6 +73,7 @@ class WsmanClient(object):
         request_template_name = 'enumerate'
         enumeration_context = None
         items = []
+        fault = None
         request_uri = yield self._sender.url
         if namespace:
            reqselector = "<wsman:SelectorSet>"
@@ -121,8 +125,10 @@ class WsmanClient(object):
                     enumeration_context=enumeration_context)
                 log.debug("{0} HTTP status: {1}".format(
                     self._hostname, response.code))
-                enumeration_context, new_items = \
+                enumeration_context, new_items, fault = \
                     yield self._handler.handle_response(response)
+                if fault:
+                    raise WsmanFault(fault)
                 items.extend(new_items)
                 if not enumeration_context:
                     break
@@ -170,7 +176,7 @@ def create_parser_and_factory():
     """
     Sets up the SAX XML parser and returns it along with an
     EnvelopeHandlerFactory instance that has access to the enumeration-context
-    and items of each WinRM response.
+    and items of each WSMAN response.
     """
     parser = sax.make_parser()
     parser.setFeature(sax.handler.feature_namespaces, True)
@@ -198,7 +204,7 @@ class SaxResponseHandler(object):
         proto = ParserFeedingProtocol(parser)
         response.deliverBody(proto)
         yield proto.d
-        defer.returnValue((factory.enumeration_context, factory.items))
+        defer.returnValue((factory.enumeration_context, factory.items, factory.fault))
 
 
 def safe_lower_equals(left, right):
@@ -458,6 +464,7 @@ class EnvelopeHandlerFactory(object):
     def __init__(self, text_buffer):
         self._enumerate_handler = EnumerateContentHandler(text_buffer)
         self._items_handler = ItemsContentHandler(text_buffer)
+        self._fault_handler = FaultContentHandler(text_buffer)
 
     @property
     def enumeration_context(self):
@@ -470,9 +477,16 @@ class EnvelopeHandlerFactory(object):
     @property
     def items(self):
         """
-        The items found in the WinRM response.
+        The items found in the WSMAN response.
         """
         return self._items_handler.items
+
+    @property
+    def fault(self):
+        """
+        The fault found in the WSMAN response.
+        """
+        return self._fault_handler.fault
 
     def get_handler_for(self, tag):
         """
@@ -485,6 +499,8 @@ class EnvelopeHandlerFactory(object):
         elif tag.matches(c.XML_NS_WS_MAN, c.WSENUM_ITEMS) \
                 or tag.matches(c.XML_NS_ENUMERATION, c.WSENUM_ITEMS):
             handler = self._items_handler
+        elif tag.matches(c.XML_NS_SOAP_1_2, c.WSENUM_FAULT):
+            handler = self._fault_handler
         log.debug('EnvelopeHandlerFactory get_handler_for {0} {1}'
                   .format(tag, handler))
         return handler
@@ -493,7 +509,7 @@ class EnvelopeHandlerFactory(object):
 class EnumerateContentHandler(sax.handler.ContentHandler):
     """
     A SAX content handler that keeps track of the enumeration-context and
-    end-of-sequence elements in a WinRM response.
+    end-of-sequence elements in a WSMAN response.
     """
 
     def __init__(self, text_buffer):
@@ -524,6 +540,55 @@ class EnumerateContentHandler(sax.handler.ContentHandler):
         if is_end_of_sequence(tag):
             self._end_of_sequence = True
 
+class FaultContentHandler(sax.handler.ContentHandler):
+    def __init__(self, text_buffer):
+        self._text_buffer = text_buffer
+        self._fault = None
+        self._fault_detail = None
+        self._fault_value = None
+        self._end_of_sequence = False
+
+    @property
+    def fault(self):
+        """
+        Read-only access to the fault. Returns None if the
+        response indicated end-of-sequence.
+        """
+        message = None
+        if not self._end_of_sequence:
+            if self._fault:
+                message = self._fault
+            if self._fault_value:
+                message = message + "\nFault Value: {}".format(self._fault_value)
+            if self._fault_detail:
+                message = message + "\nFault Detail: {}".format(self._fault_detail)
+            return message
+
+    def endElementNS(self, name, qname):
+        """
+        A SAX callback indicating the end of an element. Includes namespace
+        information.
+
+        This implementation records the fault and
+        end-of-sequence values.
+        """
+        tag = create_tag_comparer(name)
+        log.debug(tag)
+        log.debug(self._text_buffer.text)
+        if tag.matches(c.XML_NS_WS_MAN, c.WSENUM_FAULTDETAIL):
+            self._fault_detail = self._text_buffer.text
+        if tag.matches(c.XML_NS_SOAP_1_2, c.WSENUM_VALUE):
+            value = self._text_buffer.text
+            if not self._fault_value:
+                self._fault_value = value
+            else:
+                self._fault_value = self._fault_value + " {}".format(value)
+
+        if tag.matches(c.XML_NS_SOAP_1_2, c.WSENUM_TEXT):
+            self._fault = self._text_buffer.text
+        if is_end_of_sequence(tag):
+            self._end_of_sequence = True
+  
 
 class AddPropertyWithoutItemError(Exception):
     """
@@ -608,7 +673,7 @@ class TagStackStateError(Exception):
 
 class ItemsContentHandler(sax.handler.ContentHandler):
     """
-    A SAX content handler that handles the list of items in the WinRM response.
+    A SAX content handler that handles the list of items in the WSMAN response.
     For the most part the tag's localname is the property name and the
     element's text is the value. Special handling is necessary for dates and
     nils. Basically the XML handled by this class looks like
@@ -636,7 +701,7 @@ class ItemsContentHandler(sax.handler.ContentHandler):
     @property
     def items(self):
         """
-        The list of items from the WinRM enumerate response.
+        The list of items from the WSMAN enumerate response.
         """
         return self._accumulator.items
 

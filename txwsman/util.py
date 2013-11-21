@@ -4,6 +4,7 @@ import os
 import re
 import base64
 import uuid
+import httplib
 from datetime import datetime
 from twisted.python.log import err
 from twisted.web.client import Agent
@@ -163,6 +164,15 @@ class RequestSender(object):
         response = yield _get_agent().request('POST', self._url, self._headers, body_producer)
         log.debug('received response {0} {1}'.format(
             response.code, request_template_name))
+        if response.code == httplib.UNAUTHORIZED:
+            raise UnauthorizedError(
+                "unauthorized, check username and password.")
+        elif response.code != httplib.OK:
+            reader = _ErrorReader()
+            response.deliverBody(reader)
+            message = yield reader.d
+            raise RequestError("HTTP status: {0}. {1}".format(
+                response.code, message))
         defer.returnValue(response)
     
 def create_request_sender(conn_info):
@@ -176,12 +186,14 @@ def create_enum_info(className,wql,namespace):
 
 class RequestError(Exception):
     pass
+
 class UnauthorizedError(RequestError):
     pass
 
 def verify_conn_info(conn_info):
     #TODO fill out
     pass
+
 class _StringProtocol(Protocol):
 
     def __init__(self):

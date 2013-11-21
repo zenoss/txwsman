@@ -23,7 +23,11 @@ BUILTIN_NIL = 'nil'
 WSM_XML_FRAGMENT = 'XmlFragment'
 WSENUM_ENUMERATION_CONTEXT = 'EnumerationContext'
 WSENUM_END_OF_SEQUENCE = 'EndOfSequence'
+WSENUM_FAULT = 'Fault'
+WSENUM_FAULTDETAIL = 'FaultDetail'
 WSENUM_ITEMS = 'Items'
+WSENUM_TEXT = 'Text'
+WSENUM_VALUE = 'Value'
 
 DEFAULT_RESOURCE_URI = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/'
 
