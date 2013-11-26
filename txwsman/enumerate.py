@@ -75,7 +75,7 @@ class WsmanClient(object):
         enumeration_context = None
         items = []
         fault = None
-        request_uri = yield self._sender.url
+        request_uri = self._sender.url
         if namespace:
             reqselector = "<wsman:SelectorSet>"
             reqselector = reqselector + \

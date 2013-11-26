@@ -132,19 +132,18 @@ class RequestSender(object):
         self._url = None
         self._headers = None
 
-    @defer.inlineCallbacks
     def _set_url_and_headers(self):
         self._url, self._headers = _get_url_and_headers(self._conn_info)
+        return (self._url, self._headers)
 
     @property
     def hostname(self):
         return self._conn_info.hostname
 
     @property
-    @defer.inlineCallbacks
     def url(self):
-        yield self._set_url_and_headers()
-        defer.returnValue(self._url)
+        (self._url, self._headers) = self._set_url_and_headers()
+        return self._url
 
     @defer.inlineCallbacks
     def send_request(self, request_template_name, **kwargs):
