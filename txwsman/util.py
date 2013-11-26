@@ -72,7 +72,6 @@ def _get_basic_auth_header(conn_info):
     return 'Basic {0}'.format(base64.encodestring(authstr).strip())
 
 
-@defer.inlineCallbacks
 def _get_url_and_headers(conn_info):
     url = "{c.scheme}://{c.hostname}:{c.port}/wsman".format(c=conn_info)
     headers = Headers(_CONTENT_TYPE)
@@ -82,7 +81,7 @@ def _get_url_and_headers(conn_info):
             'Authorization', _get_basic_auth_header(conn_info))
     else:
         raise Exception('unknown auth type: {0}'.format(conn_info.auth_type))
-    defer.returnValue((url, headers))
+    return (url, headers)
 
 
 def _get_request_template(name):
@@ -135,7 +134,7 @@ class RequestSender(object):
 
     @defer.inlineCallbacks
     def _set_url_and_headers(self):
-        self._url, self._headers = yield _get_url_and_headers(self._conn_info)
+        self._url, self._headers = _get_url_and_headers(self._conn_info)
 
     @property
     def hostname(self):
