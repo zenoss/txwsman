@@ -26,7 +26,7 @@ _REQUEST_TEMPLATE_DIR = os.path.join(
 _XML_WHITESPACE_PATTERN = re.compile(r'>\s+<')
 
 log = logging.getLogger('zen.wsman.utils')
-log.setLevel(level=logging.DEBUG)
+# log.setLevel(level=logging.DEBUG)
 ConnectionInfo = namedtuple('ConnectionInfo',
                             ['hostname', 'auth_type', 'username', 'password',
                              'scheme', 'port', 'connectiontype', 'keytab'])
