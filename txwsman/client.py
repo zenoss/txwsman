@@ -8,7 +8,7 @@ from lxml import etree
 from cStringIO import StringIO
 
 log = logging.getLogger('zen.wsman.Client')
-log.setLevel(level=logging.DEBUG)
+# log.setLevel(level=logging.DEBUG)
 
 
 class Client(object):
