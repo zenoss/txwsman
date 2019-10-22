@@ -626,7 +626,7 @@ class Item(object):
 
     def __getitem__(self, x):
 
-        return getattr(self, str(x))
+        return getattr(self, str(x), None)
 
 
 class ItemsAccumulator(object):
